@@ -1,40 +1,35 @@
 import socket
 
-from ServerResponse import ServerResponse
+import UDPFunctions
 from UDPSettings import UDPSettings
 
 
 class UDPServer:
     def __init__(self, server_settings: UDPSettings):
         self.server_settings = server_settings
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.receiving = True
         self.the_data = 1
         self.clients = []
 
     def __enter__(self):
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP protocol
-        self.server_socket.bind((self.server_settings.server_address, self.server_settings.receive_from_port))
-        return self
+        return self.open()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def open(self):
+        self.server_socket.bind((self.server_settings.server_address, self.server_settings.receive_from_port))
+        print("Opened socket connection")
+        return self
+
+    def close(self):
         self.server_socket.close()
+        print("Closed socket connection")
 
-    async def receive_message(self):
-        if self.receiving:
-            data, address = self.server_socket.recvfrom(1024)
+    async def send_messages(self):
+        await UDPFunctions.send_message(self.server_socket, self.the_data,
+                                        self.server_settings.server_address, self.server_settings.send_to_port)
 
-            response = ServerResponse(address, data.decode('utf-8'))
-        return response
-
-    async def send_message(self, message):
-        cs = self.server_settings
-        self.server_socket.sendto(bytes(message, 'utf-8'), (cs.server_address, cs.send_to_port))
-        print(f"Message {message} sent.")
-
-    async def delegate(self, response: ServerResponse):
-        self.the_data = str(response.data)
-        print(self.the_data)
-
-    async def update(self):
-        await self.delegate(await self.receive_message())  # should receive messages first
-        await self.send_message(f"From the Server: {self.the_data}")
+    async def receive_messages(self):
+        await UDPFunctions.receive_message(self.server_socket, 1024)

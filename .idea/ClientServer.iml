@@ -6,6 +6,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src/Models" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/UDPClient" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/UDPServer" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/Common" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -1,44 +1,43 @@
 import socket
 
-from ServerResponse import ServerResponse
+import UDPFunctions
 from UDPSettings import UDPSettings
 
 
-class UDPClient():
+class UDPClient:
     def __init__(self, client_settings: UDPSettings):
         self.client_settings = client_settings
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.receiving = True
+        self.receiving = False
         self.the_data = 1
+        self.packets_sent = 0
+        self.packets_received = 0
 
     def __enter__(self):
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP protocol
-        self.server_socket.bind((self.client_settings.server_address, self.client_settings.receive_from_port))
-        return self
+        return self.open()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.server_socket.close()
+        self.close()
 
-    async def send_message(self, message):
-        cs = self.client_settings
-        self.client_socket.sendto(bytes(message, 'utf-8'), (cs.server_address, cs.send_to_port))
+    def open(self):
+        self.client_socket.bind((self.client_settings.server_address, self.client_settings.receive_from_port))
+        self.receiving = True
+        print("Opened socket connection")
+        return self
 
-    async def receive_message(self):
-        if self.receiving:
-            data, address = self.server_socket.recvfrom(1024)
-
-            response = ServerResponse(address, data.decode('utf-8'))
-        return response
+    def close(self):
+        self.receiving = False
+        self.client_socket.close()
+        print("Closed socket connection")
 
     async def update(self):
         self.the_data += 1
-        await self.send_message(self.the_data)
-        print("client update")
+        await UDPFunctions.send_message(self.client_socket, self.the_data,
+                                        self.client_settings.server_address, self.client_settings.send_to_port)
+        self.packets_sent += 1
 
     async def server_update(self):
-        response = await self.receive_message()
-        print("client server_update")
-
-    async def wait_for_input(self):
-        return
-
+        print("server_update - start")
+        await UDPFunctions.receive_message(self.client_socket, 1024)
+        self.packets_received += 1
+        print("server_update - finish")
